@@ -1,0 +1,98 @@
+{
+  "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/ai/autonomous-operations.md": {
+    "path": "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/ai/autonomous-operations.md",
+    "metadata": {
+      "title": "Autonomous Operations for AutoMind",
+      "source": "ai/autonomous-operations.md",
+      "documentType": "md",
+      "category": "ai",
+      "tags": [
+        "ai",
+        "md"
+      ],
+      "created_at": "2026-05-07T18:08:33.623Z",
+      "updated_at": "2026-05-07T18:08:33.623Z"
+    },
+    "lastModified": "2026-05-07T18:07:52.418Z",
+    "size": 17703,
+    "hash": "864a4bd7040a7effc7043fa285c92d65",
+    "version": 1
+  },
+  "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/api/rest-api-design.md": {
+    "path": "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/api/rest-api-design.md",
+    "metadata": {
+      "title": "REST API Design for AutoMind",
+      "source": "api/rest-api-design.md",
+      "documentType": "md",
+      "category": "api",
+      "tags": [
+        "api",
+        "md",
+        "\"abc123\""
+      ],
+      "created_at": "2026-05-07T18:08:33.623Z",
+      "updated_at": "2026-05-07T18:08:33.623Z"
+    },
+    "lastModified": "2026-05-07T18:07:31.402Z",
+    "size": 9674,
+    "hash": "491da697275ec3434e27c8f9f0a12511",
+    "version": 1
+  },
+  "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/database/vector-database-optimization.md": {
+    "path": "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/database/vector-database-optimization.md",
+    "metadata": {
+      "title": "Vector Database Optimization for AutoMind",
+      "source": "database/vector-database-optimization.md",
+      "documentType": "md",
+      "category": "database",
+      "tags": [
+        "database",
+        "md"
+      ],
+      "created_at": "2026-05-07T18:08:33.623Z",
+      "updated_at": "2026-05-07T18:08:33.623Z"
+    },
+    "lastModified": "2026-05-07T18:06:20.510Z",
+    "size": 16031,
+    "hash": "191bf6f3836a9cb93e925045b069169c",
+    "version": 1
+  },
+  "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/programming/nodejs-patterns.md": {
+    "path": "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/programming/nodejs-patterns.md",
+    "metadata": {
+      "title": "Node.js Patterns for AutoMind",
+      "source": "programming/nodejs-patterns.md",
+      "documentType": "md",
+      "category": "programming",
+      "tags": [
+        "programming",
+        "md"
+      ],
+      "created_at": "2026-05-07T18:08:33.624Z",
+      "updated_at": "2026-05-07T18:08:33.624Z"
+    },
+    "lastModified": "2026-05-07T18:06:00.037Z",
+    "size": 13109,
+    "hash": "4f5d27fc467fd3a113860bdcff687060",
+    "version": 1
+  },
+  "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/programming/typescript-best-practices.md": {
+    "path": "/Users/sreedharbusanelli/Environments/automind/backend/knowledge-docs/programming/typescript-best-practices.md",
+    "metadata": {
+      "title": "TypeScript Best Practices for AutoMind",
+      "source": "programming/typescript-best-practices.md",
+      "documentType": "md",
+      "category": "programming",
+      "tags": [
+        "programming",
+        "md"
+      ],
+      "created_at": "2026-05-07T18:08:33.624Z",
+      "updated_at": "2026-05-07T18:08:33.624Z"
+    },
+    "lastModified": "2026-05-07T18:05:42.510Z",
+    "size": 8068,
+    "hash": "2b1bbb86e89972caf4977d03851b6363",
+    "version": 1
+  }
+}

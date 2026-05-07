@@ -1,0 +1,299 @@
+# GitLab CI/CD Pipeline for AutoMind AI Assistant
+
+stages:
+  - validate
+  - test
+  - security
+  - build
+  - deploy-staging
+  - deploy-production
+
+variables:
+  NODE_VERSION: "20.12.2"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/automind-frontend
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/automind-backend
+
+# Cache configuration for faster builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - frontend/node_modules/
+    - backend/node_modules/
+    - frontend/.npm/
+    - backend/.npm/
+
+# Frontend validation
+frontend:validate:
+  stage: validate
+  image: node:${NODE_VERSION}
+  before_script:
+    - cd frontend
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run type-check
+    - npm run lint
+  artifacts:
+    reports:
+      junit: frontend/reports/junit.xml
+    paths:
+      - frontend/reports/
+  only:
+    - merge_requests
+    - main
+    - develop
+
+# Backend validation
+backend:validate:
+  stage: validate
+  image: node:${NODE_VERSION}
+  before_script:
+    - cd backend
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run type-check
+    - npm run lint
+  artifacts:
+    reports:
+      junit: backend/reports/junit.xml
+    paths:
+      - backend/reports/
+  only:
+    - merge_requests
+    - main
+    - develop
+
+# Frontend testing
+frontend:test:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - postgres:15
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: automind_test
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    DATABASE_URL: postgresql://test_user:test_password@postgres:5432/automind_test
+    REDIS_URL: redis://redis:6379
+  before_script:
+    - cd frontend
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run test:coverage
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      junit: frontend/reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: frontend/coverage/cobertura-coverage.xml
+    paths:
+      - frontend/coverage/
+  only:
+    - merge_requests
+    - main
+    - develop
+  dependencies:
+    - frontend:validate
+
+# Backend testing
+backend:test:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - postgres:15
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: automind_test
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    DATABASE_URL: postgresql://test_user:test_password@postgres:5432/automind_test
+    REDIS_URL: redis://redis:6379
+  before_script:
+    - cd backend
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run test:coverage
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      junit: backend/reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/coverage/cobertura-coverage.xml
+    paths:
+      - backend/coverage/
+  only:
+    - merge_requests
+    - main
+    - develop
+  dependencies:
+    - backend:validate
+
+# Security scanning
+security:audit:
+  stage: security
+  image: node:${NODE_VERSION}
+  before_script:
+    - cd frontend
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm audit --audit-level=high --json > security-report.json || true
+  artifacts:
+    reports:
+      security: frontend/security-report.json
+    paths:
+      - frontend/security-report.json
+  only:
+    - merge_requests
+    - main
+    - develop
+  allow_failure: true
+
+# Build Docker images
+frontend:build:
+  stage: build
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    IMAGE_TAG: $FRONTEND_IMAGE:$CI_COMMIT_SHA
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - cd frontend
+    - docker build
+      --cache-from $FRONTEND_IMAGE:latest
+      --tag $IMAGE_TAG
+      --tag $FRONTEND_IMAGE:latest
+      .
+    - docker push $IMAGE_TAG
+    - docker push $FRONTEND_IMAGE:latest
+  only:
+    - main
+    - develop
+  dependencies:
+    - frontend:test
+    - backend:test
+
+backend:build:
+  stage: build
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    IMAGE_TAG: $BACKEND_IMAGE:$CI_COMMIT_SHA
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - cd backend
+    - docker build
+      --cache-from $BACKEND_IMAGE:latest
+      --tag $IMAGE_TAG
+      --tag $BACKEND_IMAGE:latest
+      .
+    - docker push $IMAGE_TAG
+    - docker push $BACKEND_IMAGE:latest
+  only:
+    - main
+    - develop
+  dependencies:
+    - frontend:test
+    - backend:test
+
+# Deploy to staging
+deploy:staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:latest
+  variables:
+    KUBERNETES_NAMESPACE: automind-staging
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_STAGING
+  script:
+    - echo "Deploying to staging environment"
+    - kubectl set image deployment/automind-frontend automind-frontend=$FRONTEND_IMAGE:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE
+    - kubectl set image deployment/automind-backend automind-backend=$BACKEND_IMAGE:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE
+    - kubectl rollout status deployment/automind-frontend -n $KUBERNETES_NAMESPACE
+    - kubectl rollout status deployment/automind-backend -n $KUBERNETES_NAMESPACE
+    - echo "Waiting for pods to be ready..."
+    - kubectl wait --for=condition=available --timeout=300s deployment/automind-frontend -n $KUBERNETES_NAMESPACE
+    - kubectl wait --for=condition=available --timeout=300s deployment/automind-backend -n $KUBERNETES_NAMESPACE
+    - echo "Staging deployment completed successfully"
+  environment:
+    name: staging
+    url: https://staging.automind.ai
+  only:
+    - develop
+  dependencies:
+    - frontend:build
+    - backend:build
+
+# Deploy to production
+deploy:production:
+  stage: deploy-production
+  image: bitnami/kubectl:latest
+  variables:
+    KUBERNETES_NAMESPACE: automind-production
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_PRODUCTION
+  script:
+    - echo "Deploying to production environment"
+    - kubectl set image deployment/automind-frontend automind-frontend=$FRONTEND_IMAGE:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE
+    - kubectl set image deployment/automind-backend automind-backend=$BACKEND_IMAGE:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE
+    - kubectl rollout status deployment/automind-frontend -n $KUBERNETES_NAMESPACE
+    - kubectl rollout status deployment/automind-backend -n $KUBERNETES_NAMESPACE
+    - echo "Waiting for pods to be ready..."
+    - kubectl wait --for=condition=available --timeout=600s deployment/automind-frontend -n $KUBERNETES_NAMESPACE
+    - kubectl wait --for=condition=available --timeout=600s deployment/automind-backend -n $KUBERNETES_NAMESPACE
+    - echo "Production deployment completed successfully"
+    - kubectl get pods -n $KUBERNETES_NAMESPACE
+    - kubectl get services -n $KUBERNETES_NAMESPACE
+  environment:
+    name: production
+    url: https://automind.ai
+  when: manual
+  only:
+    - main
+  dependencies:
+    - frontend:build
+    - backend:build
+
+# Health check after deployment
+health:check:
+  stage: deploy-staging
+  image: curlimages/curl:latest
+  script:
+    - echo "Performing health checks..."
+    - sleep 30 # Wait for deployment to stabilize
+    - |
+      # Check frontend health
+      FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://staging.automind.ai/health || echo "000")
+      if [ "$FRONTEND_STATUS" = "200" ]; then
+        echo "✅ Frontend health check passed"
+      else
+        echo "❌ Frontend health check failed with status: $FRONTEND_STATUS"
+        exit 1
+      fi
+  only:
+    - develop
+  dependencies:
+    - deploy:staging
+  allow_failure: true
+
+# Cleanup old images
+cleanup:
+  stage: .post
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - echo "Cleaning up old Docker images..."
+    - docker image prune -f --filter="label!=com.gitlab.gitlab-runner"
+  only:
+    - main
+    - develop
+  when: always

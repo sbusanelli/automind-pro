@@ -1,0 +1,136 @@
+# AutoMind Backend Kubernetes Deployment for GitLab
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: automind-backend
+  namespace: automind-staging
+  labels:
+    app: automind-backend
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: automind-backend
+  template:
+    metadata:
+      labels:
+        app: automind-backend
+        version: v1
+    spec:
+      containers:
+      - name: backend
+        image: registry.gitlab.com/sbusanelli/automind/automind-backend:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: automind-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: automind-secrets
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: automind-secrets
+              key: jwt-secret
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: automind-secrets
+              key: openai-api-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+
+      volumes:
+      - name: logs
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: automind-backend-service
+  namespace: automind-staging
+  labels:
+    app: automind-backend
+spec:
+  selector:
+    app: automind-backend
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: automind-backend-hpa
+  namespace: automind-staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: automind-backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: automind-backend-config
+  namespace: automind-staging
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  REDIS_TTL: "3600"

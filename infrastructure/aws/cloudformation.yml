@@ -1,0 +1,270 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'FlowOps Multi-Cloud Infrastructure - AWS'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'staging'
+    AllowedValues: ['staging', 'production']
+    Description: 'Deployment environment'
+
+Resources:
+  # VPC Configuration
+  FlowOpsVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-vpc'
+
+  # Public Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-public-subnet-1'
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-public-subnet-2'
+
+  # Private Subnets
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-private-subnet-1'
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-private-subnet-2'
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-igw'
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Route Tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref FlowOpsVPC
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-public-rt'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # ECS Cluster
+  FlowOpsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub 'flowops-${Environment}-cluster'
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-cluster'
+
+  # Task Definition
+  FlowOpsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: flowops-task-definition
+      Cpu: 512
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt FlowOpsExecutionRole.Arn
+      TaskRoleArn: !GetAtt FlowOpsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: flowops
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.us-west-2.amazonaws.com/flowops:latest'
+          PortMappings:
+            - ContainerPort: 5000
+              Protocol: tcp
+          Environment:
+            - Name: ENVIRONMENT
+              Value: !Ref Environment
+            - Name: DB_HOST
+              Value: !Ref FlowOpsDBAddress
+            - Name: REDIS_HOST
+              Value: !Ref FlowOpsRedisAddress
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Sub '/aws/ecs/flowops-${Environment}'
+              awslogs-region: us-west-2
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+
+  # Service
+  FlowOpsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub 'flowops-${Environment}-service'
+      Cluster: !Ref FlowOpsCluster
+      TaskDefinition: !Ref FlowOpsTaskDefinition
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref FlowOpsSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - TargetGroupArn: !Ref FlowOpsTargetGroup
+          ContainerName: flowops
+          ContainerPort: 5000
+
+  # Application Load Balancer
+  FlowOpsLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub 'flowops-${Environment}-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref FlowOpsSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-alb'
+
+  # Target Group
+  FlowOpsTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub 'flowops-${Environment}-tg'
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref FlowOpsVPC
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+      TargetType: ip
+
+  # Listener
+  FlowOpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref FlowOpsLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FlowOpsTargetGroup
+
+  # Security Group
+  FlowOpsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'FlowOps security group'
+      VpcId: !Ref FlowOpsVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub 'flowops-${Environment}-sg'
+
+  # IAM Roles
+  FlowOpsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'flowops-${Environment}-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  FlowOpsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'flowops-${Environment}-task-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+Outputs:
+  LoadBalancerDNS:
+    Description: 'Load Balancer DNS Name'
+    Value: !GetAtt FlowOpsLoadBalancer.DNSName
+    Export:
+      Name: !Sub 'flowops-${Environment}-alb-dns'

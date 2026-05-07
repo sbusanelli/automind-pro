@@ -1,0 +1,47 @@
+[
+  {
+    "id": "kb-ts-001",
+    "title": "TypeScript Interface Fundamentals",
+    "content": "TypeScript interfaces define the shape of objects and provide compile-time type checking. They can describe object structures, function signatures, and can be extended or implemented by classes. Interfaces are a powerful way to define contracts in your code.",
+    "category": "programming",
+    "tags": ["typescript", "interfaces", "types", "programming"],
+    "created_at": "2026-05-07T17:00:00.000Z",
+    "updated_at": "2026-05-07T17:00:00.000Z"
+  },
+  {
+    "id": "kb-react-001",
+    "title": "React Component Lifecycle",
+    "content": "React components have lifecycle methods that allow you to run code at specific points in a component's life. In functional components, useEffect hook replaces lifecycle methods like componentDidMount, componentDidUpdate, and componentWillUnmount.",
+    "category": "programming",
+    "tags": ["react", "components", "lifecycle", "hooks", "frontend"],
+    "created_at": "2026-05-07T17:00:00.000Z",
+    "updated_at": "2026-05-07T17:00:00.000Z"
+  },
+  {
+    "id": "kb-node-001",
+    "title": "Node.js Event Loop",
+    "content": "The Node.js event loop is what allows Node.js to perform non-blocking I/O operations despite being single-threaded. It processes events in a loop, handling I/O operations, timers, and callbacks efficiently.",
+    "category": "programming",
+    "tags": ["nodejs", "event-loop", "async", "backend", "javascript"],
+    "created_at": "2026-05-07T17:00:00.000Z",
+    "updated_at": "2026-05-07T17:00:00.000Z"
+  },
+  {
+    "id": "kb-db-001",
+    "title": "SQL Database Indexing",
+    "content": "Database indexes are data structures that improve the speed of data retrieval operations on database tables. They work like book indexes, allowing the database to find rows quickly without scanning the entire table.",
+    "category": "database",
+    "tags": ["sql", "database", "indexing", "performance", "optimization"],
+    "created_at": "2026-05-07T17:00:00.000Z",
+    "updated_at": "2026-05-07T17:00:00.000Z"
+  },
+  {
+    "id": "kb-security-001",
+    "title": "JWT Authentication",
+    "content": "JSON Web Tokens (JWT) are a compact, URL-safe means of representing claims to be transferred between two parties. They are commonly used for authentication and information exchange in web applications.",
+    "category": "security",
+    "tags": ["jwt", "authentication", "security", "tokens", "web"],
+    "created_at": "2026-05-07T17:00:00.000Z",
+    "updated_at": "2026-05-07T17:00:00.000Z"
+  }
+]

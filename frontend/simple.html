@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoMind - AI Assistant</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #root {
+        height: 100vh;
+      }
+
+      /* Flexbox utilities */
+      .flex { display: flex; }
+      .h-full { height: 100%; }
+      .w-80 { width: 20rem; }
+      .flex-1 { flex: 1; }
+      .p-4 { padding: 1rem; }
+      .px-4 { padding-left: 1rem; padding-right: 1rem; }
+      .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      .mb-1 { margin-bottom: 0.25rem; }
+      .mb-2 { margin-bottom: 0.5rem; }
+      .mb-3 { margin-bottom: 0.75rem; }
+      .mb-6 { margin-bottom: 1.5rem; }
+
+      /* Border utilities */
+      .border { border: 1px solid #e5e7eb; }
+      .border-r { border-right: 1px solid #e5e7eb; }
+      .border-t { border-top: 1px solid #e5e7eb; }
+      .border-gray-200 { border-color: #e5e7eb; }
+      .border-gray-300 { border-color: #d1d5db; }
+
+      /* Text utilities */
+      .text-white { color: #ffffff; }
+      .text-gray-500 { color: #6b7280; }
+      .text-gray-600 { color: #4b5563; }
+      .text-gray-900 { color: #111827; }
+      .text-xs { font-size: 0.75rem; }
+      .text-sm { font-size: 0.875rem; }
+      .text-lg { font-size: 1.125rem; }
+      .text-2xl { font-size: 1.5rem; }
+      .font-medium { font-weight: 500; }
+      .font-semibold { font-weight: 600; }
+      .font-bold { font-weight: 700; }
+
+      /* Background utilities */
+      .bg-white { background-color: #ffffff; }
+      .bg-gray-50 { background-color: #f9fafb; }
+      .bg-blue-600 { background-color: #2563eb; }
+      .bg-green-50 { background-color: #f0fdf4; }
+      .bg-green-600 { background-color: #16a34a; }
+
+      /* Button utilities */
+      .rounded-lg { border-radius: 0.5rem; }
+      .rounded { border-radius: 0.25rem; }
+      .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+      .hover\:bg-green-700:hover { background-color: #15803d; }
+      .disabled\:opacity-50:disabled { opacity: 0.5; }
+      .disabled\:cursor-not-allowed:disabled { cursor: not-allowed; }
+
+      /* Input utilities */
+      .focus\:ring-2:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+      .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+      .focus\:border-transparent:focus { border-color: transparent; }
+
+      /* Layout utilities */
+      .grid { display: grid; }
+      .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gap-2 { gap: 0.5rem; }
+      .items-center { align-items: center; }
+      .justify-between { justify-content: space-between; }
+      .space-x-1 > * + * { margin-left: 0.25rem; }
+      .space-x-2 > * + * { margin-left: 0.5rem; }
+
+      /* Severity colors */
+      .text-green-600 { color: #16a34a; }
+      .text-orange-600 { color: #ea580c; }
+      .text-red-600 { color: #dc2626; }
+
+      /* Icon sizing */
+      .w-4 { width: 1rem; height: 1rem; }
+      .w-5 { width: 1.25rem; height: 1.25rem; }
+
+      /* Message styling */
+      .text-right { text-align: right; }
+      .text-left { text-align: left; }
+      .inline-block { display: inline-block; }
+      .max-w-xs { max-width: 20rem; }
+      .overflow-y-auto { overflow-y: auto; }
+      .min-h-screen { min-height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      const AIAssistant = () => {
+        const [messages, setMessages] = useState([]);
+        const [input, setInput] = useState('');
+        const [isTyping, setIsTyping] = useState(false);
+        const [insights, setInsights] = useState([
+          { type: 'performance', title: 'System Efficiency', value: '92%', trend: 'up', severity: 'LOW' },
+          { type: 'jobs', title: 'Job Failure Risk', value: '8%', trend: 'down', severity: 'MEDIUM' },
+          { type: 'resources', title: 'Resource Utilization', value: '76%', trend: 'stable', severity: 'LOW' },
+        ]);
+
+        const generateAIResponse = (query) => {
+          if (query.toLowerCase().includes('optimize')) {
+            return 'Based on current system metrics, I recommend optimizing job scheduling by balancing workload distribution. Consider implementing dynamic resource allocation to improve efficiency.';
+          } else if (query.toLowerCase().includes('performance')) {
+            return 'System performance is optimal. CPU usage is at 45%, memory at 62%, and all services are responding within expected thresholds.';
+          } else if (query.toLowerCase().includes('failure')) {
+            return 'The main cause of job failures appears to be resource contention during peak hours. I suggest implementing a queue system with priority scheduling.';
+          } else {
+            return 'I can help you optimize job scheduling, monitor system performance, and troubleshoot issues. What specific aspect would you like assistance with?';
+          }
+        };
+
+        const generateSuggestions = (query) => {
+          const suggestions = [
+            'Run performance analysis on all jobs',
+            'Check for resource bottlenecks',
+            'Review job failure patterns',
+            'Optimize job scheduling',
+            'Enable AI-powered monitoring',
+            'Review system logs'
+          ];
+
+          return suggestions.filter(s => 
+            query.toLowerCase().includes('performance') && s.includes('performance') ||
+            query.toLowerCase().includes('optimize') && s.includes('optimize') ||
+            query.toLowerCase().includes('failure') && s.includes('failure')
+          );
+        };
+
+        const handleSend = () => {
+          if (!input.trim()) return;
+
+          const userMessage = {
+            id: Date.now().toString(),
+            type: 'user',
+            content: input,
+            timestamp: new Date().toLocaleTimeString()
+          };
+
+          setMessages(prev => [...prev, userMessage]);
+          setInput('');
+          setIsTyping(true);
+
+          setTimeout(() => {
+            const aiResponse = generateAIResponse(input);
+            const suggestions = generateSuggestions(input);
+            
+            const aiMessage = {
+              id: (Date.now() + 1).toString(),
+              type: 'assistant',
+              content: aiResponse,
+              timestamp: new Date().toLocaleTimeString(),
+              suggestions: suggestions.length > 0 ? suggestions : undefined
+            };
+
+            setMessages(prev => [...prev, aiMessage]);
+            setIsTyping(false);
+          }, 1500);
+        };
+
+        const getInsightIcon = (type) => {
+          switch (type) {
+            case 'performance': return React.createElement('div', { className: 'w-4 h-4 text-green-500' }, '📈');
+            case 'jobs': return React.createElement('div', { className: 'w-4 h-4 text-orange-500' }, '⚠️');
+            case 'resources': return React.createElement('div', { className: 'w-4 h-4 text-blue-500' }, '💾');
+            default: return React.createElement('div', { className: 'w-4 h-4 text-gray-500' }, '📊');
+          }
+        };
+
+        const getSeverityColor = (severity) => {
+          switch (severity) {
+            case 'LOW': return 'text-green-600';
+            case 'MEDIUM': return 'text-orange-600';
+            case 'HIGH': return 'text-red-600';
+            default: return 'text-gray-600';
+          }
+        };
+
+        return React.createElement('div', { className: 'flex h-full bg-white' },
+          // AI Insights Panel
+          React.createElement('div', { className: 'w-80 border-r border-gray-200 p-4' },
+            React.createElement('h2', { className: 'text-2xl font-bold text-gray-900 mb-6' }, 'AI Insights'),
+            React.createElement('div', { className: 'space-y-4' },
+              insights.map((insight, index) => 
+                React.createElement('div', { key: index, className: 'bg-gray-50 p-4 rounded-lg' },
+                  React.createElement('div', { className: 'flex items-center justify-between mb-2' },
+                    React.createElement('div', { className: 'flex items-center space-x-2' },
+                      getInsightIcon(insight.type),
+                      React.createElement('span', { className: 'font-medium text-gray-900' }, insight.title)
+                    ),
+                    React.createElement('span', { className: `text-sm ${getSeverityColor(insight.severity)}` }, insight.severity)
+                  ),
+                  React.createElement('div', { className: 'text-lg font-semibold text-gray-900' }, insight.value),
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, `Trend: ${insight.trend}`)
+                )
+              )
+            ),
+            React.createElement('div', { className: 'mt-6' },
+              React.createElement('h3', { className: 'text-lg font-semibold text-gray-900 mb-3' }, 'Quick Actions'),
+              React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
+                React.createElement('button', { 
+                  className: 'px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700',
+                  onClick: () => setInput('optimize')
+                }, 'Optimize'),
+                React.createElement('button', { 
+                  className: 'px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700',
+                  onClick: () => setInput('performance')
+                }, 'Performance'),
+                React.createElement('button', { 
+                  className: 'px-3 py-2 bg-orange-600 text-white text-sm rounded hover:bg-orange-700',
+                  onClick: () => setInput('failure')
+                }, 'Failures'),
+                React.createElement('button', { 
+                  className: 'px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700',
+                  onClick: () => setInput('help')
+                }, 'Help')
+              )
+            )
+          ),
+
+          // Chat Interface
+          React.createElement('div', { className: 'flex-1 flex flex-col' },
+            React.createElement('div', { className: 'border-t border-gray-200 p-4' },
+              React.createElement('h1', { className: 'text-2xl font-bold text-gray-900' }, 'FlowOps AI Assistant')
+            ),
+            React.createElement('div', { className: 'flex-1 p-4 overflow-y-auto' },
+              messages.map((message) => 
+                React.createElement('div', { 
+                  key: message.id, 
+                  className: `mb-4 ${message.type === 'user' ? 'text-right' : 'text-left'}` 
+                },
+                  React.createElement('div', { 
+                    className: `inline-block max-w-xs px-4 py-2 rounded-lg ${
+                      message.type === 'user' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-900'
+                    }` 
+                  },
+                    React.createElement('p', {}, message.content),
+                    React.createElement('p', { 
+                      className: `text-xs mt-1 ${
+                        message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                      }` 
+                    }, message.timestamp)
+                  ),
+                  message.suggestions && React.createElement('div', { className: 'mt-2' },
+                    React.createElement('p', { className: 'text-xs font-medium text-gray-600 mb-1' }, 'AI Suggestions:'),
+                    message.suggestions.map((suggestion, idx) => 
+                      React.createElement('div', { 
+                        key: idx, 
+                        className: 'text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded mt-1' 
+                      }, suggestion)
+                    )
+                  )
+                )
+              ),
+              isTyping && React.createElement('div', { className: 'text-left mb-4' },
+                React.createElement('div', { className: 'inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-900' },
+                  React.createElement('p', { className: 'text-gray-500' }, 'AI is thinking...')
+                )
+              )
+            ),
+            React.createElement('div', { className: 'border-t border-gray-200 p-4' },
+              React.createElement('div', { className: 'flex space-x-2' },
+                React.createElement('input', {
+                  type: 'text',
+                  value: input,
+                  onChange: (e) => setInput(e.target.value),
+                  onKeyPress: (e) => e.key === 'Enter' && handleSend(),
+                  placeholder: 'Ask AI about job optimization, performance, or scheduling...',
+                  className: 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                }),
+                React.createElement('button', {
+                  onClick: handleSend,
+                  disabled: !input.trim(),
+                  className: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                }, 'Send')
+              )
+            )
+          )
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(AIAssistant));
+    </script>
+  </body>
+</html>
