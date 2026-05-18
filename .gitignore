@@ -116,6 +116,9 @@ Thumbs.db
 *.crt
 *.p12
 secrets/
+!secrets/
+!secrets/credentials.enc
+.credential-key
 credentials/
 
 # Build artifacts
