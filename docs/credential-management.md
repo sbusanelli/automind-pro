@@ -95,7 +95,8 @@ openssl enc -aes-256-cbc -d -pbkdf2 -in secrets/credentials.enc -out .env.creden
 
 > Do not store plaintext secrets in documentation or repository history.
 
-### **Encrypted Credentials Store**nThe repository includes an encrypted credentials artifact:
+### **Encrypted Credentials Store**
+The repository includes an encrypted credentials artifact:
 - `secrets/credentials.enc`: encrypted credentials template
 - `.credential-key`: local decryption key (ignored by git)
 
