@@ -55,6 +55,8 @@ This guide covers the comprehensive testing strategy for FlowOps, including unit
 src/tests/
 ├── unit/                    # Unit tests
 │   ├── vaultService.test.ts
+│   ├── vectorService.test.ts
+│   ├── documentProcessor.test.ts  # Added for document processing coverage
 │   ├── aiService.test.ts
 │   ├── credentialService.test.ts
 │   └── jobService.test.ts
@@ -91,6 +93,46 @@ describe('VaultService', () => {
   it('should handle missing secret gracefully', async () => {
     await expect(vaultService.readSecret('nonexistent/path'))
       .rejects.toThrow('Secret not found');
+  });
+});
+```
+
+### **Document Processor Tests**
+```typescript
+describe('DocumentProcessor', () => {
+  let documentProcessor: DocumentProcessor;
+
+  beforeEach(() => {
+    documentProcessor = new DocumentProcessor();
+  });
+
+  describe('Initialization', () => {
+    it('should initialize successfully', async () => {
+      await expect(documentProcessor.initialize()).resolves.not.toThrow();
+    });
+  });
+
+  describe('Document Processing', () => {
+    it('should process document and store embeddings', async () => {
+      const content = 'This is test document content.';
+      const metadata = createMockDocumentMetadata();
+      
+      await expect(documentProcessor.processDocument(content, metadata))
+        .resolves.not.toThrow();
+    });
+
+    it('should handle batch processing', async () => {
+      const documents = [doc1, doc2, doc3];
+      await expect(documentProcessor.processDocumentsBatch(documents))
+        .resolves.not.toThrow();
+    });
+  });
+
+  describe('File Extraction', () => {
+    it('should extract text from markdown files', async () => {
+      await expect(documentProcessor.extractTextFromFile('test.md'))
+        .rejects.toThrow(); // File doesn't exist in test
+    });
   });
 });
 ```
