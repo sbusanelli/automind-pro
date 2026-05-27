@@ -9,7 +9,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "axios": "^1.15.0",
-    "clsx": "^2.0.0",
+    "clsx": "^2.1.1",
     "date-fns": "^2.30.0",
     "eslint-visitor-keys": "^4.0.0",
     "lucide-react": "^1.14.0",
