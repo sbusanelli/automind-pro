@@ -27,7 +27,7 @@
     "@pinecone-database/pinecone": "^3.0.0",
     "@types/sqlite3": "^5.1.0",
     "bcrypt": "^6.0.0",
-    "bull": "^4.11.0",
+    "bull": "^4.16.5",
     "cors": "^2.8.0",
     "cron": "^3.1.0",
     "dotenv": "^16.3.0",
@@ -44,6 +44,7 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1",
     "typescript": "^5.2.2",
+    "uuid": "^11.1.1",
     "winston": "^3.11.0"
   },
   "devDependencies": {
