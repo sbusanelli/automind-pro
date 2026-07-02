@@ -37,7 +37,7 @@
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.3",
     "openai": "^4.20.0",
-    "pg": "^8.11.0",
+    "pg": "^8.22.0",
     "redis": "^4.6.0",
     "redis-memory-server": "^0.16.1",
     "socket.io": "^4.7.0",
