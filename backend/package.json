@@ -68,7 +68,7 @@
     "prettier": "^3.0.0",
     "selenium-webdriver": "^4.43.0",
     "supertest": "^6.3.0",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.0"
   },
   "engines": {
