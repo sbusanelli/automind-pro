@@ -58,7 +58,7 @@
     "@types/selenium-webdriver": "^4.35.5",
     "@types/supertest": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
+    "@typescript-eslint/parser": "^8.67.0",
     "axios": "^1.16.0",
     "eslint": "^8.50.0",
     "eslint-plugin-security": "^1.7.0",
